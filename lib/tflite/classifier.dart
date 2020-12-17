@@ -17,11 +17,11 @@ class Classifier {
   /// Labels file loaded as list
   List<String> _labels;
 
-  static const String MODEL_FILE_NAME = "detect.tflite";
-  static const String LABEL_FILE_NAME = "labelmap.txt";
+  static const String MODEL_FILE_NAME = "ssdmobilenetv2.tflite";
+  static const String LABEL_FILE_NAME = "ssdmobilenetv2.txt";
 
   /// Input size of image (height = width = 300)
-  static const int INPUT_SIZE = 300;
+  static const int INPUT_SIZE = 1000;
 
   /// Result score threshold
   static const double THRESHOLD = 0.5;
@@ -59,6 +59,10 @@ class Classifier {
           );
 
       var outputTensors = _interpreter.getOutputTensors();
+//      print("Output Tensors");
+//      print(outputTensors.toString());
+//      print("Input Tensors");
+//      print(_interpreter.getInputTensors().toString());
       _outputShapes = [];
       _outputTypes = [];
       outputTensors.forEach((tensor) {
@@ -87,6 +91,7 @@ class Classifier {
       imageProcessor = ImageProcessorBuilder()
           .add(ResizeWithCropOrPadOp(padSize, padSize))
           .add(ResizeOp(INPUT_SIZE, INPUT_SIZE, ResizeMethod.BILINEAR))
+          .add(NormalizeOp(0.0, 0.03))
           .build();
     }
     inputImage = imageProcessor.process(inputImage);
@@ -121,7 +126,9 @@ class Classifier {
 
     // Inputs object for runForMultipleInputs
     // Use [TensorImage.buffer] or [TensorBuffer.buffer] to pass by reference
-    List<Object> inputs = [inputImage.buffer];
+//    List<Object> inputs = [inputImage.buffer];
+
+    List<Object> inputs = [inputImage.buffer.asUint8List()];
 
     // Outputs map
     Map<int, Object> outputs = {
@@ -164,7 +171,9 @@ class Classifier {
 
       // Label string
       var labelIndex = outputClasses.getIntValue(i) + labelOffset;
-      var label = _labels.elementAt(labelIndex);
+      print("THIS IS LABEL INDEX");
+      print(labelIndex);
+      var label = _labels.elementAt(labelIndex-1);
 
       if (score > THRESHOLD) {
         // inverse of rect
